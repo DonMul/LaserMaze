@@ -6,6 +6,9 @@
 
 HTTPClient http;
 
+
+#define USE_SERIAL Serial
+
 const char* ssid = "laser";
 const char* password = "lasermaze";
 
@@ -28,21 +31,37 @@ void setup() {
   
   pinMode(laserPin, OUTPUT);
   pinMode(photoresistor, INPUT);
+  pinMode(LED_BUILTIN, OUTPUT);
 }
 
 void loop() {  
   digitalWrite (laserPin, HIGH);
+  digitalWrite(LED_BUILTIN, HIGH);
 
   int sensor = analogRead(photoresistor);
-  if (sensor > 25) {
+
+Serial.println(sensor);
+  if (sensor > 200) {
     if (lock == false) {
+      
+  digitalWrite(LED_BUILTIN, LOW);
       lock = true;
-      http.begin("http://192.168.4.1/punish");
-      http.end();
+        HTTPClient http;
+
+        USE_SERIAL.print("[HTTP] begin...\n");
+        http.begin("42.42.42.42", 80, "/punish"); //HTTP
+        USE_SERIAL.print("[HTTP] GET...\n");
+        
+        http.GET();
+        http.end();
+        
+  digitalWrite(LED_BUILTIN, HIGH);
     }
   } else {
     if (lock == true) {
       lock = false;
     }
   }
+  
+  digitalWrite(LED_BUILTIN, LOW);
 }
