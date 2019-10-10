@@ -4,9 +4,6 @@
 #define laserPin D1
 #define photoresistor A0
 
-HTTPClient http;
-
-
 #define USE_SERIAL Serial
 
 const char* ssid = "laser";
@@ -16,51 +13,51 @@ bool lock = false;
 
 void setup() {
   Serial.begin(9600);
-  WiFi.begin(ssid, password);
-
-  // Wait for connection
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-  Serial.println("");
-  Serial.print("Connected to ");
-  Serial.println(ssid);
-  Serial.print("IP address: ");
-  Serial.println(WiFi.localIP());
+  
+  tryWifiConnect();
   
   pinMode(laserPin, OUTPUT);
   pinMode(photoresistor, INPUT);
   pinMode(LED_BUILTIN, OUTPUT);
 }
 
+
+void tryWifiConnect() {
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.print("Connecting to Access point..");
+    WiFi.begin(ssid, password);
+    
+    while (WiFi.status() != WL_CONNECTED) {
+      Serial.print(".");
+      delay(100);
+    }
+    
+    Serial.println("connected");
+  }
+}
+
 void loop() {  
+  tryWifiConnect();
   digitalWrite (laserPin, HIGH);
   digitalWrite(LED_BUILTIN, HIGH);
 
   int sensor = analogRead(photoresistor);
 
-Serial.println(sensor);
-  if (sensor > 200) {
-    if (lock == false) {
-      
-  digitalWrite(LED_BUILTIN, LOW);
-      lock = true;
-        HTTPClient http;
+  if (sensor > 200 && lock == false) {
+    digitalWrite(LED_BUILTIN, LOW);
+    
+    lock = true;
 
-        USE_SERIAL.print("[HTTP] begin...\n");
-        http.begin("42.42.42.42", 80, "/punish"); //HTTP
-        USE_SERIAL.print("[HTTP] GET...\n");
-        
-        http.GET();
-        http.end();
-        
-  digitalWrite(LED_BUILTIN, HIGH);
-    }
-  } else {
-    if (lock == true) {
-      lock = false;
-    }
+    Serial.println("Send punish");
+    HTTPClient http;
+    http.begin("42.42.42.42", 80, "/punish");
+    http.GET();
+    http.end();
+    Serial.println("Punish send");
+      
+    digitalWrite(LED_BUILTIN, HIGH);
+  } else if (sensor < 200 && lock == true) {
+    lock = false;
   }
   
   digitalWrite(LED_BUILTIN, LOW);
